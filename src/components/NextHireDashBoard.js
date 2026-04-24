@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  User, Video, Mic, PlayCircle, Clock, 
+import {
+  User, Video, Mic, PlayCircle, Clock,
   Upload, UserCircle, ChevronRight, Terminal, CheckCircle2, AlertCircle,
   FileText, Zap, ArrowRight
 } from 'lucide-react';
 import InterviewSessionComponent from './InterviewSessionComponent';
+import SystemCheckComponent from './SystemCheckComponent';
 
 const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
   const navigate = useNavigate();
-  
+
   // Local states for the interview setup
   const [mic, setMic] = useState(false);
   const [cam, setCam] = useState(false);
   const [role, setRole] = useState("");
   const [file, setFile] = useState(null);
   const [isSessionActive, setIsSessionActive] = useState(false);
+  const [showSystemCheck, setShowSystemCheck] = useState(false);
 
   // Function to handle history item click
   const handleHistoryNavigation = (item) => {
@@ -26,13 +28,14 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
   // Function to start the interview session
   const handleStartSession = () => {
     if (mic && cam && role && file) {
-      setIsSessionActive(true);
+      setShowSystemCheck(true);
     }
   };
 
   // Function to end the interview session
   const handleEndSession = () => {
     setIsSessionActive(false);
+    setShowSystemCheck(false);
   };
 
   // If interview session is active, render the interview component
@@ -40,13 +43,27 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
     return <InterviewSessionComponent onEndSession={handleEndSession} role={role} candidate={profile?.name} />;
   }
 
+  // Show system check before starting interview
+  if (showSystemCheck) {
+    return (
+      <SystemCheckComponent
+        onChecksPassed={() => setIsSessionActive(true)}
+        onBack={() => setShowSystemCheck(false)}
+      />
+    );
+  }
+
   return (
     <div className="vh-100 d-flex flex-column dashboard-wrapper animate-fade-in">
-      
+
       {/* 1. HEADER */}
       <header className="px-4 d-flex justify-content-between align-items-center dash-header shadow-sm position-relative z-index-1" style={{ height: '65px', flexShrink: 0 }}>
         <div className="d-flex align-items-center gap-2 logo-anim">
-          <div className="rounded-circle" style={{ width: '24px', height: '24px', backgroundColor: '#121a2f' }}></div>
+          <svg viewBox="0 0 100 100" style={{ width: '28px', height: '28px' }} fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="50" cy="50" r="46" stroke="#000" strokeWidth="4" />
+            <path d="M 32 32 L 32 68" stroke="#00b4d8" strokeWidth="18" />
+            <path d="M 32 32 L 68 68 L 68 32" stroke="#121a2f" strokeWidth="18" />
+          </svg>
           <h4 className="fw-bold mb-0 logo-text" style={{ letterSpacing: '-0.5px', position: 'relative' }}>
             <span style={{ color: '#121a2f' }}>Next</span>
             <span style={{ color: '#00b4d8' }}>Hire</span>
@@ -54,7 +71,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
         </div>
 
         {/* CLICKABLE NAME: Redirects to /profile */}
-        <button 
+        <button
           onClick={() => navigate('/profile')}
           className="btn d-flex align-items-center gap-2 border-0 rounded-pill px-3 py-1 transition-all hover-profile-btn glass-panel"
         >
@@ -68,17 +85,17 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
       {/* 2. MAIN WORKSPACE */}
       <main className="p-3 p-lg-4 flex-grow-1 position-relative z-index-0 d-flex flex-column" style={{ overflow: 'hidden' }}>
         <div className="d-flex flex-column flex-xl-row gap-3 gap-lg-4 flex-grow-1 w-100" style={{ minHeight: 0 }}>
-          
+
           {/* LEFT: INTERVIEW LOBBY */}
           <div className="flex-grow-1 d-flex flex-column" style={{ minWidth: 0, minHeight: 0 }}>
             <div className="dash-card flex-grow-1 border-0 rounded-4 overflow-hidden position-relative animate-fade-in animate-delay-1 d-flex flex-column" style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4)', minHeight: 0 }}>
               <div className="d-flex flex-column flex-md-row flex-grow-1" style={{ minHeight: 0 }}>
-                
+
                 {/* Media Setup Sidebar */}
                 <div className="col-md-5 d-flex flex-column align-items-center justify-content-center p-4 border-end position-relative" style={{ background: 'linear-gradient(160deg, #0d1117 0%, #161b22 50%, #0d1117 100%)', borderColor: 'var(--border-color) !important', overflow: 'hidden' }}>
                   {/* Subtle grid pattern */}
                   <div style={{ position: 'absolute', inset: 0, opacity: 0.04, backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }}></div>
-                  
+
                   {/* Section title */}
                   <div className="text-center mb-3 position-relative">
                     <span className="text-uppercase fw-bold" style={{ fontSize: '0.65rem', letterSpacing: '2.5px', color: '#00b4d8' }}>System Check</span>
@@ -86,7 +103,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
 
                   {/* Camera preview */}
                   <div className="position-relative mb-4">
-                    <div className={`rounded-4 d-flex align-items-center justify-content-center transition-all container-camera ${cam ? 'camera-active' : 'camera-inactive'}`} 
+                    <div className={`rounded-4 d-flex align-items-center justify-content-center transition-all container-camera ${cam ? 'camera-active' : 'camera-inactive'}`}
                       style={{ border: '2px solid', width: '100%', maxWidth: '240px', minWidth: '200px', aspectRatio: '4/3', backgroundColor: cam ? 'rgba(0,180,216,0.05)' : 'rgba(255,255,255,0.03)', position: 'relative' }}>
                       <User size={64} style={{ color: cam ? '#00b4d8' : 'rgba(255,255,255,0.15)', transition: 'color 0.3s ease' }} />
                       {cam && <div className="camera-pulse-ring"></div>}
@@ -128,7 +145,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                 <div className="d-flex flex-column p-3 p-xl-4 flex-grow-1 position-relative" style={{ background: 'linear-gradient(180deg, #fafcff 0%, #f0f6fa 100%)', minWidth: 0, overflow: 'hidden' }}>
                   {/* Decorative corner accent */}
                   <div style={{ position: 'absolute', top: 0, right: 0, width: '120px', height: '120px', background: 'radial-gradient(circle at top right, rgba(0,180,216,0.06) 0%, transparent 70%)', pointerEvents: 'none' }}></div>
-                  
+
                   <div className="position-relative">
                     {/* Header with icon */}
                     <div className="d-flex align-items-center gap-2 mb-1">
@@ -138,18 +155,43 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                       <h5 className="fw-bold mb-0" style={{ color: 'var(--text-primary)' }}>Interview Setup</h5>
                     </div>
                     <p className="small mb-3" style={{ color: 'var(--text-secondary)', paddingLeft: '36px' }}>Configure your session and get started.</p>
-                    
+
                     {/* Step 1: Target Domain */}
                     <div className="mb-3 config-field">
-                      <label className="fw-bold small mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
+                      <label className="fw-bold small mb-2 d-flex align-items-center gap-2" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
                         <span className="d-inline-flex align-items-center justify-content-center rounded-circle" style={{ width: '18px', height: '18px', fontSize: '0.6rem', fontWeight: 700, background: role ? '#10b981' : 'rgba(0,180,216,0.15)', color: role ? '#fff' : '#00b4d8', transition: 'all 0.3s ease' }}>{role ? '✓' : '1'}</span>
                         TARGET DOMAIN
                       </label>
-                      <select className="form-select rounded-3 py-2 px-3 shadow-none config-select" value={role} onChange={(e)=>setRole(e.target.value)}>
-                        <option value="">Select your category...</option>
-                        <option value="python">Python Stack</option>
-                        <option value="java">Java Stack</option>
-                      </select>
+                      <div className="d-flex gap-3">
+                        {[
+                          { value: 'Python', label: 'Python Stack', desc: 'Basic Pyhton,Flask,Django', icon: '🐍', bg: 'rgba(59,130,246,0.08)' },
+                          { value: 'Java', label: 'Java Stack', desc: 'Core Java,Collection', icon: '☕', bg: 'rgba(249,115,22,0.08)' },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setRole(opt.value)}
+                            className={`domain-option flex-grow-1 rounded-3 p-3 text-start ${role === opt.value ? 'domain-active' : ''}`}
+                            style={{
+                              background: role === opt.value ? 'rgba(0,180,216,0.06)' : '#fff',
+                              border: role === opt.value ? '2px solid #00b4d8' : '2px solid rgba(0,0,0,0.08)',
+                              cursor: 'pointer',
+                              transition: 'all 0.25s ease',
+                              boxShadow: role === opt.value ? '0 4px 12px rgba(0,180,216,0.12)' : '0 2px 8px rgba(0,0,0,0.04)',
+                            }}
+                          >
+                            <div className="d-flex align-items-center gap-3">
+                              <div className="d-flex align-items-center justify-content-center rounded-3" style={{ width: '40px', height: '40px', background: role === opt.value ? 'rgba(0,180,216,0.12)' : opt.bg, flexShrink: 0 }}>
+                                <span style={{ fontSize: '1.2rem' }}>{opt.icon}</span>
+                              </div>
+                              <div>
+                                <div className="fw-bold" style={{ fontSize: '0.85rem', color: role === opt.value ? '#00b4d8' : 'var(--text-primary)' }}>{opt.label}</div>
+                                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', lineHeight: 1.3, marginTop: '1px' }}>{opt.desc}</div>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
 
                     {/* Step 2: Resume Upload */}
@@ -159,7 +201,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                         RESUME UPLOAD
                       </label>
                       <div className="rounded-3 text-center transition-all config-dropzone" style={{ border: `2px dashed ${file ? '#10b981' : 'rgba(0,0,0,0.12)'}`, backgroundColor: file ? 'rgba(16,185,129,0.04)' : 'rgba(0,0,0,0.02)', padding: '0.75rem', transition: 'all 0.3s ease' }}>
-                        <input type="file" id="up" hidden onChange={(e)=>setFile(e.target.files[0])} />
+                        <input type="file" id="up" hidden onChange={(e) => setFile(e.target.files[0])} />
                         <label htmlFor="up" className="mb-0 w-100 cursor-pointer d-flex align-items-center justify-content-center gap-2" style={{ fontSize: '0.85rem' }}>
                           {file ? (
                             <>
@@ -190,9 +232,9 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                         {[mic, cam, !!role, !!file].filter(Boolean).length}/4
                       </span>
                     </div>
-                    <button 
+                    <button
                       onClick={handleStartSession}
-                      className={`launch-btn py-2 d-flex align-items-center justify-content-center gap-2 w-100 rounded-3 border-0 fw-bold ${ (mic && cam && role && file) ? 'launch-btn-ready' : 'launch-btn-disabled'}`} 
+                      className={`launch-btn py-2 d-flex align-items-center justify-content-center gap-2 w-100 rounded-3 border-0 fw-bold ${(mic && cam && role && file) ? 'launch-btn-ready' : 'launch-btn-disabled'}`}
                       disabled={!(mic && cam && role && file)}
                     >
                       <PlayCircle size={18} /> Launch Session
@@ -215,10 +257,10 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
               <div className="flex-grow-1 overflow-auto p-3 custom-scrollbar">
                 {history.length > 0 ? (
                   history.map((item) => (
-                    <div 
-                      key={item.id} 
-                      onClick={() => handleHistoryNavigation(item)} 
-                      className="p-3 mb-3 rounded-4 transition-all hover-card" 
+                    <div
+                      key={item.id}
+                      onClick={() => handleHistoryNavigation(item)}
+                      className="p-3 mb-3 rounded-4 transition-all hover-card"
                       style={{ cursor: 'pointer', backgroundColor: 'rgba(255,255,255,0.03)' }}
                     >
                       <div className="d-flex justify-content-between align-items-center mb-2">
@@ -228,10 +270,10 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                         </span>
                       </div>
                       <div className="d-flex justify-content-between align-items-center small mt-2">
-                         <span style={{ color: 'var(--text-muted)' }}><Clock size={12} className="me-1"/>{item.date}</span>
-                         <span className="fw-bold small d-flex align-items-center gap-1 transition-all link-hover" style={{ color: 'var(--accent-primary)' }}>
-                           Analysis <ChevronRight size={14}/>
-                         </span>
+                        <span style={{ color: 'var(--text-muted)' }}><Clock size={12} className="me-1" />{item.date}</span>
+                        <span className="fw-bold small d-flex align-items-center gap-1 transition-all link-hover" style={{ color: 'var(--accent-primary)' }}>
+                          Analysis <ChevronRight size={14} />
+                        </span>
                       </div>
                     </div>
                   ))
@@ -337,6 +379,16 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
 
         .config-field {
           transition: all 0.3s ease;
+        }
+
+        .domain-option:hover {
+          border-color: rgba(0,180,216,0.3) !important;
+          background: rgba(0,180,216,0.04) !important;
+          transform: translateY(-1px);
+        }
+        .domain-active {
+          border-color: #00b4d8 !important;
+          box-shadow: 0 2px 8px rgba(0,180,216,0.15);
         }
 
         .launch-btn {

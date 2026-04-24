@@ -75,7 +75,11 @@ const SignupPage = () => {
       <div className="glass-panel animate-fade-in" style={{ width: '100%', maxWidth: '480px', padding: '2rem' }}>
         <div className="mb-4 text-center d-flex flex-column align-items-center">
           <div className="d-flex align-items-center gap-2 mb-2 logo-anim">
-            <div className="rounded-circle" style={{ width: '24px', height: '24px', backgroundColor: '#121a2f' }}></div>
+            <svg viewBox="0 0 100 100" style={{ width: '28px', height: '28px' }} fill="none" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="50" cy="50" r="46" stroke="#000" strokeWidth="4" />
+              <path d="M 32 32 L 32 68" stroke="#00b4d8" strokeWidth="18" />
+              <path d="M 32 32 L 68 68 L 68 32" stroke="#121a2f" strokeWidth="18" />
+            </svg>
             <h3 className="fw-bold m-0 logo-text" style={{ fontSize: '1.8rem', letterSpacing: '-0.5px' }}>
               <span style={{ color: '#121a2f' }}>Next</span>
               <span style={{ color: '#00b4d8' }}>Hire</span>
@@ -93,6 +97,7 @@ const SignupPage = () => {
                 className="input-premium py-2"
                 style={errors.firstName ? { borderColor: 'var(--accent-danger)' } : {}}
                 name="firstName"
+                placeholder='first name'
                 value={formData.firstName}
                 onChange={handleInputChange}
               />
@@ -106,6 +111,7 @@ const SignupPage = () => {
                 style={errors.lastName ? { borderColor: 'var(--accent-danger)' } : {}}
                 name="lastName"
                 value={formData.lastName}
+                placeholder='last name'
                 onChange={handleInputChange}
               />
               {errors.lastName && <div className="mt-1" style={{ color: 'var(--accent-danger)', fontSize: '0.75rem' }}>{errors.lastName}</div>}
@@ -120,6 +126,7 @@ const SignupPage = () => {
               style={errors.email ? { borderColor: 'var(--accent-danger)' } : {}}
               name="email"
               value={formData.email}
+              placeholder='email'
               onChange={handleInputChange}
             />
             {errors.email && <div className="mt-1" style={{ color: 'var(--accent-danger)', fontSize: '0.75rem' }}>{errors.email}</div>}
@@ -133,6 +140,7 @@ const SignupPage = () => {
               style={errors.password ? { borderColor: 'var(--accent-danger)' } : {}}
               name="password"
               value={formData.password}
+              placeholder='password'
               onChange={handleInputChange}
             />
             {errors.password && <div className="mt-1" style={{ color: 'var(--accent-danger)', fontSize: '0.75rem' }}>{errors.password}</div>}

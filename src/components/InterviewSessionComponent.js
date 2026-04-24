@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Phone, Mic, MicOff, Video, VideoOff, Share2, MessageSquare, Plus, Trash2, Edit3, X } from 'lucide-react';
+import { Phone, Mic, MicOff, Video, VideoOff, Cast, MessageSquare, Plus, Trash2, Edit3, X, Code, FileText } from 'lucide-react';
 import { TalkingHead } from '../lib/talkinghead';
 
 const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
@@ -14,6 +14,7 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
   const [isAvatarReady, setIsAvatarReady] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [noteMode, setNoteMode] = useState('text'); // 'text' or 'code'
 
   // Initialize webcam stream
   useEffect(() => {
@@ -162,15 +163,14 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
 
   return (
     <div
-      className="vh-100 d-flex flex-column overflow-hidden"
-      style={{ backgroundColor: '#0d1117', fontFamily: "'Inter', sans-serif" }}
+      className="vh-100 d-flex flex-column overflow-hidden dashboard-wrapper"
+      style={{ fontFamily: "'Inter', sans-serif" }}
     >
       {/* HEADER */}
       <header
-        className="px-4 d-flex justify-content-between align-items-center"
+        className="px-4 d-flex justify-content-between align-items-center dash-header"
         style={{
-          background: 'linear-gradient(90deg, #121a2f 0%, #1a2540 100%)',
-          borderBottom: '1px solid rgba(0,180,216,0.12)',
+          borderBottom: '1px solid rgba(0,0,0,0.06)',
           height: '60px',
           flexShrink: 0,
         }}
@@ -178,13 +178,13 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
         <div className="d-flex align-items-center gap-3">
           <div className="d-flex align-items-center gap-2">
             <div className="rounded-circle" style={{ width: '20px', height: '20px', background: 'linear-gradient(135deg, #00b4d8, #0096b4)' }}></div>
-            <span className="fw-bold" style={{ color: '#fff', fontSize: '1rem', letterSpacing: '-0.3px' }}>
+            <span className="fw-bold" style={{ color: 'var(--text-primary)', fontSize: '1rem', letterSpacing: '-0.3px' }}>
               Next<span style={{ color: '#00b4d8' }}>Hire</span>
             </span>
           </div>
-          <div style={{ width: '1px', height: '24px', background: 'rgba(255,255,255,0.12)' }}></div>
+          <div style={{ width: '1px', height: '24px', background: 'rgba(0,0,0,0.1)' }}></div>
           <div>
-            <span className="fw-bold" style={{ color: '#fff', fontSize: '0.85rem' }}>{role} Interview</span>
+            <span className="fw-bold" style={{ color: 'var(--text-primary)', fontSize: '0.85rem' }}>{role} Interview</span>
           </div>
         </div>
         <div className="d-flex align-items-center gap-3">
@@ -201,18 +201,18 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
       </header>
 
       {/* MAIN VIDEO AREA */}
-      <main className="flex-grow-1 p-4 position-relative overflow-auto d-flex flex-column flex-xl-row align-items-center justify-content-center gap-4" style={{ background: 'radial-gradient(ellipse at center, #161b22 0%, #0d1117 100%)' }}>
+      <main className="flex-grow-1 p-4 position-relative overflow-auto d-flex flex-column flex-xl-row align-items-center justify-content-center gap-4">
         
         {/* INTERVIEWER SCREEN */}
         <div
-          className="rounded-4 overflow-hidden position-relative d-flex align-items-center justify-content-center"
+          className="rounded-4 overflow-hidden position-relative d-flex align-items-center justify-content-center dash-card"
           style={{
-            backgroundColor: '#0d1117',
-            border: '2px solid rgba(0,180,216,0.2)',
+            backgroundColor: 'var(--bg-panel)',
+            border: '1px solid rgba(0,0,0,0.06)',
             width: '100%',
             maxWidth: '850px',
             aspectRatio: '16/9',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(0,180,216,0.1)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
           }}
         >
           {/* TALKING HEAD AVATAR CONTAINER */}
@@ -231,13 +231,13 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
                 <div className="spinner-border mb-3" style={{ color: '#00b4d8', width: '2rem', height: '2rem' }} role="status">
                   <span className="visually-hidden">Loading...</span>
                 </div>
-                <small className="d-block" style={{ color: 'rgba(255,255,255,0.4)' }}>Initializing AI interviewer...</small>
+                <small className="d-block" style={{ color: 'var(--text-secondary)' }}>Initializing AI interviewer...</small>
               </div>
             )}
             {avatarError && (
               <div className="text-center p-4">
-                <small className="d-block" style={{ color: '#f59e0b' }}>{avatarError}</small>
-                <small className="d-block mt-2" style={{ color: 'rgba(255,255,255,0.3)' }}>
+                <small className="d-block" style={{ color: '#ef4444' }}>{avatarError}</small>
+                <small className="d-block mt-2" style={{ color: 'var(--text-secondary)' }}>
                   Check the setup guide: TALKINGHEAD_SETUP.md
                 </small>
               </div>
@@ -252,7 +252,7 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
             width: '100%',
             maxWidth: '380px',
             aspectRatio: '4/3',
-            backgroundColor: '#0d1117',
+            backgroundColor: '#000',
             border: '2px solid #00b4d8',
             flexShrink: 0,
             boxShadow: '0 8px 24px rgba(0,180,216,0.15)',
@@ -293,175 +293,225 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
           </div>
         </div>
 
-        {/* FLOATING NOTES BUBBLE BUTTON */}
-        <button
-          onClick={() => setIsNotesOpen(!isNotesOpen)}
-          className="btn rounded-circle shadow-lg position-absolute d-flex align-items-center justify-content-center border-0"
-          style={{
-            bottom: '30px',
-            left: '30px',
-            width: '52px',
-            height: '52px',
-            zIndex: 100,
-            background: isNotesOpen ? 'rgba(255,255,255,0.12)' : 'linear-gradient(135deg, #00b4d8 0%, #0096b4 100%)',
-            color: '#fff',
-            boxShadow: isNotesOpen ? 'none' : '0 4px 20px rgba(0,180,216,0.35)',
-            transition: 'all 0.3s ease',
-          }}
-          title="Session Notes"
-        >
-          {isNotesOpen ? <X size={22} /> : <Edit3 size={20} />}
-        </button>
+      </main>
 
-        {/* NOTES PANEL */}
-        {isNotesOpen && (
-          <div
-            className="d-flex flex-column rounded-3 overflow-hidden position-absolute shadow-lg animate-fade-in"
-            style={{
-              width: '300px',
-              height: '340px',
-              border: '1px solid rgba(255,255,255,0.1)',
-              bottom: '95px',
-              left: '30px',
-              zIndex: 99,
-              background: 'rgba(18,26,47,0.95)',
-              backdropFilter: 'blur(16px)',
-            }}
-          >
-            <div className="px-3 py-2 d-flex justify-content-between align-items-center" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-              <span className="fw-bold" style={{ color: '#fff', fontSize: '0.8rem' }}>Notes</span>
-              <button 
-                onClick={() => setNotes('')} 
-                className="btn btn-sm p-0 border-0"
-                style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.7rem' }}
-                title="Clear all"
+      {/* NOTES PANEL — fixed above controls bar */}
+      {isNotesOpen && (
+        <div
+          className="d-flex flex-column rounded-3 overflow-hidden shadow-lg animate-fade-in dash-card"
+          style={{
+            position: 'fixed',
+            width: '420px',
+            height: '460px',
+            border: '1px solid rgba(0,0,0,0.1)',
+            bottom: '100px',
+            left: '24px',
+            zIndex: 999,
+            background: 'var(--bg-panel)',
+            backdropFilter: 'blur(16px)',
+          }}
+        >
+          {/* Header with mode toggle */}
+          <div className="px-3 py-2 d-flex justify-content-between align-items-center" style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+            <div className="d-flex align-items-center gap-1" style={{ background: 'rgba(0,0,0,0.04)', borderRadius: '6px', padding: '2px' }}>
+              <button
+                onClick={() => setNoteMode('text')}
+                className="btn btn-sm p-0 border-0 d-flex align-items-center gap-1"
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: '5px',
+                  background: noteMode === 'text' ? 'rgba(0,180,216,0.15)' : 'transparent',
+                  color: noteMode === 'text' ? '#00b4d8' : 'var(--text-secondary)',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  transition: 'all 0.2s ease',
+                }}
               >
-                Clear
+                <FileText size={12} /> Text
+              </button>
+              <button
+                onClick={() => setNoteMode('code')}
+                className="btn btn-sm p-0 border-0 d-flex align-items-center gap-1"
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: '5px',
+                  background: noteMode === 'code' ? 'rgba(0,180,216,0.15)' : 'transparent',
+                  color: noteMode === 'code' ? '#00b4d8' : 'var(--text-secondary)',
+                  fontSize: '0.7rem',
+                  fontWeight: 600,
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <Code size={12} /> Code
               </button>
             </div>
-
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Type your notes here..."
-              className="flex-grow-1 p-3 border-0 shadow-none"
-              autoFocus
-              style={{
-                backgroundColor: 'transparent',
-                color: '#e6edf3',
-                resize: 'none',
-                fontFamily: "'Inter', sans-serif",
-                fontSize: '0.85rem',
-                lineHeight: '1.6',
-                outline: 'none',
-                letterSpacing: '0.2px',
-              }}
-            />
+            <button
+              onClick={() => setNotes('')}
+              className="btn btn-sm p-0 border-0"
+              style={{ color: 'var(--text-secondary)', fontSize: '0.7rem' }}
+              title="Clear all"
+            >
+              Clear
+            </button>
           </div>
-        )}
-      </main>
+
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={noteMode === 'code' ? '// Write your code here...' : 'Type your notes here...'}
+            className="flex-grow-1 p-3 border-0 shadow-none"
+            autoFocus
+            spellCheck={noteMode !== 'code'}
+            style={{
+              backgroundColor: noteMode === 'code' ? '#121a2f' : 'transparent',
+              color: noteMode === 'code' ? '#7ee787' : 'var(--text-primary)',
+              resize: 'none',
+              fontFamily: noteMode === 'code' ? "'Consolas', 'Fira Code', 'Source Code Pro', monospace" : "'Inter', sans-serif",
+              fontSize: noteMode === 'code' ? '0.82rem' : '0.85rem',
+              lineHeight: noteMode === 'code' ? '1.7' : '1.6',
+              outline: 'none',
+              letterSpacing: noteMode === 'code' ? '0px' : '0.2px',
+              tabSize: 2,
+              transition: 'all 0.25s ease',
+            }}
+            onKeyDown={(e) => {
+              if (noteMode === 'code' && e.key === 'Tab') {
+                e.preventDefault();
+                const start = e.target.selectionStart;
+                const end = e.target.selectionEnd;
+                const newVal = notes.substring(0, start) + '  ' + notes.substring(end);
+                setNotes(newVal);
+                setTimeout(() => { e.target.selectionStart = e.target.selectionEnd = start + 2; }, 0);
+              }
+            }}
+          />
+        </div>
+      )}
 
       {/* CONTROLS BAR */}
       <div
-        className="px-4 d-flex justify-content-center align-items-center gap-4"
+        className="px-4 d-flex align-items-center dash-header"
         style={{
-          background: 'linear-gradient(90deg, #121a2f 0%, #1a2540 100%)',
-          borderTop: '1px solid rgba(0,180,216,0.12)',
+          background: 'rgba(255, 255, 255, 0.85)',
+          borderTop: '1px solid rgba(0,0,0,0.06)',
           height: '88px',
           flexShrink: 0,
+          position: 'relative',
         }}
       >
-        {/* Microphone */}
-        <div className="d-flex flex-column align-items-center gap-1">
+        {/* LEFT — Notes button */}
+        <div className="d-flex flex-column align-items-center gap-1" style={{ position: 'absolute', left: '24px' }}>
           <button
-            onClick={toggleMic}
+            onClick={() => setIsNotesOpen(!isNotesOpen)}
             className="btn rounded-circle p-0 d-flex align-items-center justify-content-center border-0"
             style={{
               width: '50px', height: '50px',
-              background: micActive ? 'linear-gradient(135deg, #00b4d8, #0096b4)' : '#ef4444',
-              color: '#fff',
-              boxShadow: micActive ? '0 4px 12px rgba(0,180,216,0.3)' : '0 4px 12px rgba(239,68,68,0.3)',
+              background: isNotesOpen ? 'linear-gradient(135deg, #00b4d8, #0096b4)' : 'rgba(0,0,0,0.04)',
+              color: isNotesOpen ? '#fff' : 'var(--text-primary)',
+              border: isNotesOpen ? 'none' : '1px solid rgba(0,0,0,0.08) !important',
+              boxShadow: isNotesOpen ? '0 4px 12px rgba(0,180,216,0.3)' : 'none',
               transition: 'all 0.3s ease',
             }}
           >
-            {micActive ? <Mic size={20} /> : <MicOff size={20} />}
+            {isNotesOpen ? <X size={20} /> : <Edit3 size={20} />}
           </button>
-          <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>Mic</span>
+          <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Notes</span>
         </div>
 
-        {/* Camera */}
-        <div className="d-flex flex-column align-items-center gap-1">
-          <button
-            onClick={toggleCamera}
-            className="btn rounded-circle p-0 d-flex align-items-center justify-content-center border-0"
-            style={{
-              width: '50px', height: '50px',
-              background: cameraActive ? 'linear-gradient(135deg, #00b4d8, #0096b4)' : '#ef4444',
-              color: '#fff',
-              boxShadow: cameraActive ? '0 4px 12px rgba(0,180,216,0.3)' : '0 4px 12px rgba(239,68,68,0.3)',
-              transition: 'all 0.3s ease',
-            }}
-          >
-            {cameraActive ? <Video size={20} /> : <VideoOff size={20} />}
-          </button>
-          <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>Camera</span>
-        </div>
+        {/* CENTER — Main controls */}
+        <div className="d-flex align-items-center gap-4 mx-auto">
+          {/* Microphone */}
+          <div className="d-flex flex-column align-items-center gap-1">
+            <button
+              onClick={toggleMic}
+              className="btn rounded-circle p-0 d-flex align-items-center justify-content-center border-0"
+              style={{
+                width: '50px', height: '50px',
+                background: micActive ? 'linear-gradient(135deg, #00b4d8, #0096b4)' : '#ef4444',
+                color: '#fff',
+                boxShadow: micActive ? '0 4px 12px rgba(0,180,216,0.3)' : '0 4px 12px rgba(239,68,68,0.3)',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              {micActive ? <Mic size={20} /> : <MicOff size={20} />}
+            </button>
+            <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Mic</span>
+          </div>
 
-        {/* Screen Share */}
-        <div className="d-flex flex-column align-items-center gap-1">
-          <button
-            onClick={handleScreenShare}
-            className="btn rounded-circle p-0 d-flex align-items-center justify-content-center border-0"
-            style={{
-              width: '50px', height: '50px',
-              background: isScreenSharing ? '#00b4d8' : 'rgba(255,255,255,0.06)',
-              color: '#fff',
-              border: isScreenSharing ? 'none' : '1px solid rgba(255,255,255,0.12) !important',
-              transition: 'all 0.3s ease',
-            }}
-          >
-            <Share2 size={20} />
-          </button>
-          <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>Share</span>
-        </div>
+          {/* Camera */}
+          <div className="d-flex flex-column align-items-center gap-1">
+            <button
+              onClick={toggleCamera}
+              className="btn rounded-circle p-0 d-flex align-items-center justify-content-center border-0"
+              style={{
+                width: '50px', height: '50px',
+                background: cameraActive ? 'linear-gradient(135deg, #00b4d8, #0096b4)' : '#ef4444',
+                color: '#fff',
+                boxShadow: cameraActive ? '0 4px 12px rgba(0,180,216,0.3)' : '0 4px 12px rgba(239,68,68,0.3)',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              {cameraActive ? <Video size={20} /> : <VideoOff size={20} />}
+            </button>
+            <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Camera</span>
+          </div>
 
-        {/* Ask Question */}
-        <div className="d-flex flex-column align-items-center gap-1">
-          <button
-            onClick={() => askQuestion(Math.floor(Math.random() * 6))}
-            className="btn rounded-circle p-0 d-flex align-items-center justify-content-center border-0"
-            style={{
-              width: '50px', height: '50px',
-              background: 'rgba(255,255,255,0.06)',
-              color: '#fff',
-              border: '1px solid rgba(255,255,255,0.12) !important',
-              transition: 'all 0.3s ease',
-            }}
-          >
-            <MessageSquare size={20} />
-          </button>
-          <span style={{ fontSize: '0.6rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>Ask</span>
-        </div>
+          {/* Screen Share */}
+          <div className="d-flex flex-column align-items-center gap-1">
+            <button
+              onClick={handleScreenShare}
+              className="btn rounded-circle p-0 d-flex align-items-center justify-content-center border-0"
+              style={{
+                width: '50px', height: '50px',
+                background: isScreenSharing ? '#00b4d8' : 'rgba(0,0,0,0.04)',
+                color: isScreenSharing ? '#fff' : 'var(--text-primary)',
+                border: isScreenSharing ? 'none' : '1px solid rgba(0,0,0,0.08) !important',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              <Cast size={20} />
+            </button>
+            <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Share</span>
+          </div>
 
-        {/* Divider */}
-        <div style={{ width: '1px', height: '36px', background: 'rgba(255,255,255,0.1)', margin: '0 4px' }}></div>
+          {/* Ask Question */}
+          <div className="d-flex flex-column align-items-center gap-1">
+            <button
+              onClick={() => askQuestion(Math.floor(Math.random() * 6))}
+              className="btn rounded-circle p-0 d-flex align-items-center justify-content-center border-0"
+              style={{
+                width: '50px', height: '50px',
+                background: 'rgba(0,0,0,0.04)',
+                color: 'var(--text-primary)',
+                border: '1px solid rgba(0,0,0,0.08) !important',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              <MessageSquare size={20} />
+            </button>
+            <span style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Ask</span>
+          </div>
 
-        {/* End Call */}
-        <div className="d-flex flex-column align-items-center gap-1">
-          <button
-            onClick={onEndSession}
-            className="btn rounded-circle p-0 d-flex align-items-center justify-content-center border-0"
-            style={{
-              width: '50px', height: '50px',
-              background: '#ef4444',
-              color: '#fff',
-              boxShadow: '0 4px 12px rgba(239,68,68,0.3)',
-              transition: 'all 0.3s ease',
-            }}
-          >
-            <Phone size={20} />
-          </button>
-          <span style={{ fontSize: '0.6rem', color: 'rgba(239,68,68,0.7)', fontWeight: 500 }}>End</span>
+          {/* Divider */}
+          <div style={{ width: '1px', height: '36px', background: 'rgba(0,0,0,0.1)', margin: '0 4px' }}></div>
+
+          {/* End Call */}
+          <div className="d-flex flex-column align-items-center gap-1">
+            <button
+              onClick={onEndSession}
+              className="btn rounded-circle p-0 d-flex align-items-center justify-content-center border-0"
+              style={{
+                width: '50px', height: '50px',
+                background: '#ef4444',
+                color: '#fff',
+                boxShadow: '0 4px 12px rgba(239,68,68,0.3)',
+                transition: 'all 0.3s ease',
+              }}
+            >
+              <Phone size={20} />
+            </button>
+            <span style={{ fontSize: '0.6rem', color: 'rgba(239,68,68,0.7)', fontWeight: 500 }}>End</span>
+          </div>
         </div>
       </div>
 

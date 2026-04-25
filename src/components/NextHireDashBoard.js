@@ -18,6 +18,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
   const [file, setFile] = useState(null);
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [showSystemCheck, setShowSystemCheck] = useState(false);
+  const [showAnalysis, setShowAnalysis] = useState(false);
 
   // Function to handle history item click
   const handleHistoryNavigation = (item) => {
@@ -34,13 +35,84 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
 
   // Function to end the interview session
   const handleEndSession = () => {
+    setShowAnalysis(true);
+  };
+
+  const handleCloseAnalysis = () => {
+    setShowAnalysis(false);
     setIsSessionActive(false);
     setShowSystemCheck(false);
   };
 
   // If interview session is active, render the interview component
-  if (isSessionActive) {
+  if (isSessionActive && !showAnalysis) {
     return <InterviewSessionComponent onEndSession={handleEndSession} role={role} candidate={profile?.name} />;
+  }
+
+  // If analysis is active, render the analysis popup
+  if (showAnalysis) {
+    return (
+      <div className="vh-100 w-100 d-flex flex-column align-items-center justify-content-center p-3 animate-fade-in" style={{ background: 'var(--bg-app)', position: 'absolute', top: 0, left: 0, zIndex: 1050, overflow: 'hidden' }}>
+        {/* Subtle background glow */}
+        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(0,180,216,0.1) 0%, transparent 70%)', pointerEvents: 'none' }}></div>
+        
+        <div className="dash-card rounded-4 p-4 d-flex flex-column shadow-lg position-relative" style={{ maxWidth: '750px', width: '100%', maxHeight: '90vh', background: 'var(--bg-panel)', border: '1px solid rgba(0, 180, 216, 0.2)', backdropFilter: 'blur(16px)' }}>
+          {/* Header */}
+          <div className="text-center mb-4">
+            <div className="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" style={{ width: '48px', height: '48px', background: 'linear-gradient(135deg, rgba(0,180,216,0.1) 0%, rgba(0,150,180,0.2) 100%)', border: '2px solid #00b4d8' }}>
+              <Zap size={24} style={{ color: '#00b4d8' }} />
+            </div>
+            <h3 className="fw-bold mb-1" style={{ color: 'var(--text-primary)', letterSpacing: '-0.5px' }}>Session Analysis</h3>
+            <p className="mb-0 small" style={{ color: 'var(--text-secondary)' }}>Quick breakdown of your performance in the {role} interview.</p>
+          </div>
+
+          {/* Metrics Grid */}
+          <div className="row g-3 mb-4">
+            <div className="col-md-4">
+              <div className="p-3 rounded-4 text-center transition-all hover-card" style={{ background: 'rgba(0,0,0,0.02)', border: '1px solid var(--border-color)' }}>
+                <div className="fs-1 fw-bold mb-1 text-gradient" style={{ background: 'linear-gradient(135deg, #00b4d8, #0096b4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>85%</div>
+                <div className="fw-bold text-uppercase" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '1px' }}>Overall Score</div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="p-3 rounded-4 text-center transition-all hover-card" style={{ background: 'rgba(0,0,0,0.02)', border: '1px solid var(--border-color)' }}>
+                <div className="fs-1 fw-bold mb-1 text-gradient" style={{ background: 'linear-gradient(135deg, #10b981, #059669)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>92%</div>
+                <div className="fw-bold text-uppercase" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '1px' }}>Communication</div>
+              </div>
+            </div>
+            <div className="col-md-4">
+              <div className="p-3 rounded-4 text-center transition-all hover-card" style={{ background: 'rgba(0,0,0,0.02)', border: '1px solid var(--border-color)' }}>
+                <div className="fs-1 fw-bold mb-1 text-gradient" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>78%</div>
+                <div className="fw-bold text-uppercase" style={{ fontSize: '0.7rem', color: 'var(--text-muted)', letterSpacing: '1px' }}>Technical</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Feedback Section */}
+          <div className="mb-4 p-3 rounded-4 flex-grow-1 d-flex flex-column justify-content-center" style={{ background: 'rgba(0, 180, 216, 0.05)', border: '1px solid rgba(0, 180, 216, 0.1)' }}>
+            <h6 className="fw-bold mb-2 d-flex align-items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+              <FileText size={16} style={{ color: '#00b4d8' }} /> Key Insights
+            </h6>
+            <ul className="mb-0 ps-3 small" style={{ color: 'var(--text-secondary)', lineHeight: '1.6' }}>
+              <li className="mb-1">Strong communication skills and clear articulation of ideas.</li>
+              <li className="mb-1">Solid understanding of core {role} concepts.</li>
+              <li>Consider practicing more advanced problem-solving scenarios under time constraints.</li>
+            </ul>
+          </div>
+
+          {/* Action Button */}
+          <div className="text-center mt-auto">
+            <button
+              onClick={handleCloseAnalysis}
+              className="btn px-4 py-2 rounded-pill fw-bold d-inline-flex align-items-center gap-2 transition-all launch-btn-ready"
+              style={{ letterSpacing: '0.5px', fontSize: '0.9rem' }}
+            >
+              Return to Dashboard <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Show system check before starting interview

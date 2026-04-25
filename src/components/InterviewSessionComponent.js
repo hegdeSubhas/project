@@ -6,9 +6,11 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
   const videoRef = useRef(null);
   const avatarRef = useRef(null);
   const talkingHeadRef = useRef(null);
+  const screenRef = useRef(null);
   const [cameraActive, setCameraActive] = useState(true);
   const [micActive, setMicActive] = useState(true);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
+  const [screenStream, setScreenStream] = useState(null);
   const [sessionTime, setSessionTime] = useState(0);
   const [notes, setNotes] = useState('');
   const [isAvatarReady, setIsAvatarReady] = useState(false);
@@ -42,6 +44,22 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
       }
     };
   }, []);
+
+  // Attach screen share stream to video ref
+  useEffect(() => {
+    if (screenRef.current && screenStream) {
+      screenRef.current.srcObject = screenStream;
+    }
+  }, [screenStream, isScreenSharing]);
+
+  // Clean up screen share stream on unmount
+  useEffect(() => {
+    return () => {
+      if (screenStream) {
+        screenStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [screenStream]);
 
   // Timer for session duration
   useEffect(() => {
@@ -132,8 +150,33 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
     }
   };
 
-  const handleScreenShare = () => {
-    setIsScreenSharing(!isScreenSharing);
+  const handleScreenShare = async () => {
+    if (isScreenSharing) {
+      // Stop sharing
+      if (screenStream) {
+        screenStream.getTracks().forEach(track => track.stop());
+      }
+      setScreenStream(null);
+      setIsScreenSharing(false);
+    } else {
+      // Start sharing
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+        setScreenStream(stream);
+        setIsScreenSharing(true);
+
+        // Listen for user clicking "Stop sharing" on the browser native dialog
+        const videoTrack = stream.getVideoTracks()[0];
+        if (videoTrack) {
+          videoTrack.onended = () => {
+            setScreenStream(null);
+            setIsScreenSharing(false);
+          };
+        }
+      } catch (err) {
+        console.error("Error sharing screen: ", err);
+      }
+    }
   };
 
   // Interview questions for the avatar to ask
@@ -201,97 +244,150 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
       </header>
 
       {/* MAIN VIDEO AREA */}
-      <main className="flex-grow-1 p-4 position-relative overflow-auto d-flex flex-column flex-xl-row align-items-center justify-content-center gap-4">
+      <main 
+        className={`flex-grow-1 p-4 position-relative overflow-hidden d-flex ${isScreenSharing ? 'flex-column flex-lg-row align-items-stretch' : 'flex-column flex-xl-row align-items-center justify-content-center'} gap-4`}
+        style={{ transition: 'all 0.5s ease' }}
+      >
         
-        {/* INTERVIEWER SCREEN */}
-        <div
-          className="rounded-4 overflow-hidden position-relative d-flex align-items-center justify-content-center dash-card"
-          style={{
-            backgroundColor: 'var(--bg-panel)',
-            border: '1px solid rgba(0,0,0,0.06)',
-            width: '100%',
-            maxWidth: '850px',
-            aspectRatio: '16/9',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
-          }}
+        {/* LEFT/TOP COLUMN: CAMERAS */}
+        <div 
+          className={`d-flex ${isScreenSharing ? 'flex-row flex-lg-column w-100 w-lg-auto' : 'flex-column flex-xl-row w-100 align-items-center justify-content-center'} gap-3 gap-xl-4`}
+          style={{ transition: 'all 0.5s ease', ...(isScreenSharing ? { flexShrink: 0, width: '100%', maxWidth: '340px' } : {}) }}
         >
-          {/* TALKING HEAD AVATAR CONTAINER */}
+          {/* INTERVIEWER SCREEN */}
           <div
-            ref={avatarRef}
-            id="avatar-container"
-            className="w-100 h-100 position-relative"
+            className="rounded-4 overflow-hidden position-relative d-flex align-items-center justify-content-center dash-card"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              backgroundColor: 'var(--bg-panel)',
+              border: '1px solid rgba(0,0,0,0.06)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
+              transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+              ...(isScreenSharing ? {
+                width: '100%',
+                flex: 1,
+              } : {
+                width: '100%',
+                maxWidth: '850px',
+                aspectRatio: '16/9',
+              })
             }}
           >
-            {!isAvatarReady && (
-              <div className="text-center">
-                <div className="spinner-border mb-3" style={{ color: '#00b4d8', width: '2rem', height: '2rem' }} role="status">
-                  <span className="visually-hidden">Loading...</span>
-                </div>
-                <small className="d-block" style={{ color: 'var(--text-secondary)' }}>Initializing AI interviewer...</small>
-              </div>
-            )}
-            {avatarError && (
-              <div className="text-center p-4">
-                <small className="d-block" style={{ color: '#ef4444' }}>{avatarError}</small>
-                <small className="d-block mt-2" style={{ color: 'var(--text-secondary)' }}>
-                  Check the setup guide: TALKINGHEAD_SETUP.md
-                </small>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* CANDIDATE VIDEO - SIDE BY SIDE */}
-        <div
-          className="rounded-4 overflow-hidden shadow-lg position-relative"
-          style={{
-            width: '100%',
-            maxWidth: '380px',
-            aspectRatio: '4/3',
-            backgroundColor: '#000',
-            border: '2px solid #00b4d8',
-            flexShrink: 0,
-            boxShadow: '0 8px 24px rgba(0,180,216,0.15)',
-          }}
-        >
-          <video
-            ref={videoRef}
-            autoPlay
-            playsInline
-            muted
-            className="w-100 h-100"
-            style={{
-              objectFit: 'cover',
-              transform: 'scaleX(-1)',
-            }}
-          />
-          {!cameraActive && (
+            {/* TALKING HEAD AVATAR CONTAINER */}
             <div
-              className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
-              style={{ backgroundColor: 'rgba(0, 0, 0, 0.9)' }}
+              ref={avatarRef}
+              id="avatar-container"
+              className="w-100 h-100 position-relative"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
             >
-              <div className="text-center">
-                <VideoOff size={40} className="text-white mb-2" />
-                <small className="text-white d-block fw-bold">Camera Off</small>
-              </div>
+              {!isAvatarReady && (
+                <div className="text-center">
+                  <div className="spinner-border mb-3" style={{ color: '#00b4d8', width: '2rem', height: '2rem' }} role="status">
+                    <span className="visually-hidden">Loading...</span>
+                  </div>
+                  <small className="d-block" style={{ color: 'var(--text-secondary)' }}>Initializing AI interviewer...</small>
+                </div>
+              )}
+              {avatarError && (
+                <div className="text-center p-4">
+                  <small className="d-block" style={{ color: '#ef4444' }}>{avatarError}</small>
+                  <small className="d-block mt-2" style={{ color: 'var(--text-secondary)' }}>
+                    Check the setup guide: TALKINGHEAD_SETUP.md
+                  </small>
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
-          {/* "You" LABEL */}
+          {/* CANDIDATE VIDEO */}
           <div
-            className="position-absolute top-0 start-0 p-2"
+            className="rounded-4 overflow-hidden shadow-lg position-relative"
             style={{
-              background: 'linear-gradient(135deg, #00b4d8, #0096b4)',
-              borderRadius: '0 0 8px 0',
+              backgroundColor: '#000',
+              flexShrink: 0,
+              transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+              ...(isScreenSharing ? {
+                width: '100%',
+                flex: 1,
+                border: '2px solid #10b981',
+                boxShadow: '0 8px 24px rgba(16,185,129,0.2)',
+              } : {
+                width: '100%',
+                maxWidth: '380px',
+                aspectRatio: '4/3',
+                border: '2px solid #00b4d8',
+                boxShadow: '0 8px 24px rgba(0,180,216,0.15)',
+              })
             }}
           >
-            <small className="text-white fw-bold">You</small>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="w-100 h-100"
+              style={{
+                objectFit: 'cover',
+                transform: 'scaleX(-1)',
+              }}
+            />
+            {!cameraActive && (
+              <div
+                className="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                style={{ backgroundColor: 'rgba(0, 0, 0, 0.9)' }}
+              >
+                <div className="text-center">
+                  <VideoOff size={40} className="text-white mb-2" />
+                  <small className="text-white d-block fw-bold">Camera Off</small>
+                </div>
+              </div>
+            )}
+
+            {/* "You" LABEL */}
+            <div
+              className="position-absolute top-0 start-0 p-2"
+              style={{
+                background: 'linear-gradient(135deg, #00b4d8, #0096b4)',
+                borderRadius: '0 0 8px 0',
+                zIndex: 5,
+              }}
+            >
+              <small className="text-white fw-bold">You</small>
+            </div>
           </div>
         </div>
+
+        {/* RIGHT COLUMN: SHARED SCREEN */}
+        {isScreenSharing && (
+          <div 
+            className="rounded-4 d-flex flex-column align-items-center justify-content-center overflow-hidden flex-grow-1 h-100 animate-fade-in"
+            style={{
+              backgroundColor: 'var(--bg-panel)',
+              border: '2px solid rgba(0,180,216,0.3)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.1)'
+            }}
+          >
+            {screenStream ? (
+              <video
+                ref={screenRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-100 h-100"
+                style={{ objectFit: 'contain', backgroundColor: '#000' }}
+              />
+            ) : (
+              <>
+                <Cast size={64} style={{ color: '#00b4d8', marginBottom: '16px' }} />
+                <h3 className="fw-bold text-gradient" style={{ background: 'linear-gradient(135deg, #00b4d8, #0096b4)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Starting Screen Share...</h3>
+                <p style={{ color: 'var(--text-secondary)' }}>Awaiting browser permissions.</p>
+              </>
+            )}
+          </div>
+        )}
 
       </main>
 

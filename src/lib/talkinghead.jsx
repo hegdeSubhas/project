@@ -306,7 +306,4 @@ class TalkingHead {
   }
 }
 
-// Export for use with require()
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { TalkingHead };
-}
+export { TalkingHead };

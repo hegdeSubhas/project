@@ -20,7 +20,7 @@ const SystemCheckComponent = ({ onChecksPassed, onBack }) => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [countdown, setCountdown] = useState(5);
 
-  const NOISE_THRESHOLD = 24;
+  const NOISE_THRESHOLD = 35;
   const MIN_BRIGHTNESS = 40;
   const MIN_WIDTH = 640;
   const MIN_HEIGHT = 480;
@@ -28,7 +28,7 @@ const SystemCheckComponent = ({ onChecksPassed, onBack }) => {
   useEffect(() => {
     return () => {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      if (audioContextRef.current) audioContextRef.current.close().catch(() => {});
+      if (audioContextRef.current) audioContextRef.current.close().catch(() => { });
       if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
     };
   }, []);
@@ -86,7 +86,7 @@ const SystemCheckComponent = ({ onChecksPassed, onBack }) => {
   const checkVideoQuality = (stream) => {
     const videoTrack = stream.getVideoTracks()[0];
     if (!videoTrack) { setVideoStatus('fail'); setStep('done'); return; }
-    
+
     // Wait slightly to ensure video has started rendering frames
     setTimeout(() => {
       const video = videoRef.current;
@@ -96,7 +96,7 @@ const SystemCheckComponent = ({ onChecksPassed, onBack }) => {
       const height = video.videoHeight || 480;
       const settings = videoTrack.getSettings ? videoTrack.getSettings() : {};
       const fps = settings.frameRate || 30;
-      
+
       setVideoRes({ width, height });
       setVideoFps(Math.round(fps));
 
@@ -104,21 +104,21 @@ const SystemCheckComponent = ({ onChecksPassed, onBack }) => {
         try {
           const canvas = canvasRef.current;
           const ctx = canvas.getContext('2d');
-          canvas.width = width; 
+          canvas.width = width;
           canvas.height = height;
           ctx.drawImage(video, 0, 0, width, height);
-          
+
           const imageData = ctx.getImageData(0, 0, width, height);
           const data = imageData.data;
-          let total = 0; 
-          
+          let total = 0;
+
           // Sample every 4th pixel to improve performance and avoid locking the thread
-          for (let i = 0; i < data.length; i += 16) { 
-            total += (data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114);
+          for (let i = 0; i < data.length; i += 16) {
+            total += (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
           }
           const px = data.length / 16;
           const avgB = total / px;
-          
+
           setVideoBrightness(Math.round(avgB));
           setVideoStatus((width >= MIN_WIDTH && height >= MIN_HEIGHT && avgB >= MIN_BRIGHTNESS) ? 'pass' : 'fail');
         } catch (e) {
@@ -134,7 +134,7 @@ const SystemCheckComponent = ({ onChecksPassed, onBack }) => {
 
   const retry = () => {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    if (audioContextRef.current) { audioContextRef.current.close().catch(() => {}); audioContextRef.current = null; }
+    if (audioContextRef.current) { audioContextRef.current.close().catch(() => { }); audioContextRef.current = null; }
     if (streamRef.current) { streamRef.current.getTracks().forEach(t => t.stop()); streamRef.current = null; }
     setStep('idle'); setNoiseLevel(0); setAvgNoise(null); setMicStatus('pending'); setVideoStatus('pending');
     setVideoRes(null); setVideoBrightness(null); setVideoFps(null); setErrorMsg(null);

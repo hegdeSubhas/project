@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Phone, Mic, MicOff, Video, VideoOff, Cast, MessageSquare, Plus, Trash2, Edit3, X, Code, FileText } from 'lucide-react';
 import { TalkingHead } from '../lib/talkinghead';
-
+import { Avatoon } from "avatoon";
 const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
   const videoRef = useRef(null);
   const avatarRef = useRef(null);
@@ -15,6 +15,7 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
   const [notes, setNotes] = useState('');
   const [isAvatarReady, setIsAvatarReady] = useState(false);
   const [avatarError, setAvatarError] = useState(null);
+  const [visemeJson, setVisemeJson] = useState(null);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [noteMode, setNoteMode] = useState('text'); // 'text' or 'code'
 
@@ -73,54 +74,16 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
   // Initialize TalkingHead Avatar
   useEffect(() => {
     const initializeAvatar = async () => {
-      if (!avatarRef.current || !TalkingHead) {
-        if (!TalkingHead) {
-          setAvatarError('TalkingHead library not installed. Run: npm install talkinghead');
-        }
-        setIsAvatarReady(true);
-        return;
-      }
-
-      try {
-        const head = new TalkingHead(avatarRef.current, {
-          // Voice settings
-          speechRate: 1,
-          voiceURI: 'Google UK English Female', // Professional female voice
-        });
-
-        // Load professional avatar body
-        await head.showAvatar({
-          url: 'https://models.readyplayer.me/63a8a8b3bf004141e0f10c6e.glb', // Default RPM avatar
-          body: 'F', // Female body
-          avatarMood: 'neutral',
-        });
-
-        talkingHeadRef.current = head;
+      // Simulate avatar load time
+      setTimeout(() => {
         setIsAvatarReady(true);
         setAvatarError(null);
-
-        // Welcome message
-        setTimeout(() => {
-          head.speakText(`Welcome to your ${role} interview at NextHire. Let's begin with your interview.`);
-        }, 1000);
-      } catch (error) {
-        console.error('Error initializing TalkingHead:', error);
-        setAvatarError('Failed to load avatar. Please refresh the page.');
-        setIsAvatarReady(true);
-      }
+      }, 1000);
     };
 
     initializeAvatar();
 
     return () => {
-      if (talkingHeadRef.current) {
-        try {
-          talkingHeadRef.current.destroy();
-        } catch (error) {
-          console.warn('Error destroying avatar:', error);
-        }
-        talkingHeadRef.current = null;
-      }
     };
   }, [role]);
 
@@ -191,16 +154,18 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
 
   // Function to make avatar ask a question
   const askQuestion = (questionIndex = 0) => {
-    if (talkingHeadRef.current && isAvatarReady) {
+    if (isAvatarReady) {
       const question = interviewQuestions[questionIndex % interviewQuestions.length];
-      talkingHeadRef.current.speakText(question);
+      const msg = new SpeechSynthesisUtterance(question);
+      window.speechSynthesis.speak(msg);
     }
   };
 
   // Function to make avatar speak custom text
   const speakText = (text) => {
-    if (talkingHeadRef.current && isAvatarReady) {
-      talkingHeadRef.current.speakText(text);
+    if (isAvatarReady) {
+      const msg = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(msg);
     }
   };
 
@@ -258,7 +223,7 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
           <div
             className="rounded-4 overflow-hidden position-relative d-flex align-items-center justify-content-center dash-card"
             style={{
-              backgroundColor: 'var(--bg-panel)',
+              backgroundColor: '#000',
               border: '1px solid rgba(0,0,0,0.06)',
               boxShadow: '0 8px 32px rgba(0,0,0,0.05)',
               transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -281,24 +246,16 @@ const InterviewSessionComponent = ({ onEndSession, role, candidate }) => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                backgroundColor: '#000'
               }}
             >
-              {!isAvatarReady && (
-                <div className="text-center">
-                  <div className="spinner-border mb-3" style={{ color: '#00b4d8', width: '2rem', height: '2rem' }} role="status">
-                    <span className="visually-hidden">Loading...</span>
-                  </div>
-                  <small className="d-block" style={{ color: 'var(--text-secondary)' }}>Initializing AI interviewer...</small>
-                </div>
-              )}
-              {avatarError && (
-                <div className="text-center p-4">
-                  <small className="d-block" style={{ color: '#ef4444' }}>{avatarError}</small>
-                  <small className="d-block mt-2" style={{ color: 'var(--text-secondary)' }}>
-                    Check the setup guide: TALKINGHEAD_SETUP.md
-                  </small>
-                </div>
-              )}
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Avatoon
+                  glbUrl="https://raw.githubusercontent.com/khaledalam/avatoon/main/test/assets/placeholder-avatar.glb"
+                  goal="Normal"
+                  visemeJson={visemeJson}
+                />
+              </div>
             </div>
           </div>
 

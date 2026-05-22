@@ -142,15 +142,31 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
           </h4>
         </div>
 
-        {/* CLICKABLE NAME: Redirects to /profile */}
+        {/* CLICKABLE NAME + AVATAR: Redirects to /profile */}
         <button
           onClick={() => navigate('/profile')}
-          className="btn d-flex align-items-center gap-2 border-0 rounded-pill px-3 py-1 transition-all hover-profile-btn glass-panel"
+          className="btn d-flex align-items-center gap-2 border-0 rounded-pill px-2 py-1 transition-all hover-profile-btn glass-panel"
         >
-          <span className="small fw-bold border-start ps-3" style={{ borderColor: 'var(--border-color) !important', color: 'var(--text-primary)' }}>
-            {profile?.name || "Subhas Hegde"}
+          <span className="small fw-bold ps-2" style={{ color: 'var(--text-primary)' }}>
+            {profile?.name || profile?.firstName || 'User'}
           </span>
-          <UserCircle size={22} style={{ color: 'var(--accent-primary)' }} />
+          {/* Avatar: show uploaded photo or fallback icon */}
+          {profile?.avatar ? (
+            <img
+              src={profile.avatar}
+              alt="avatar"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '2px solid rgba(0,180,216,0.4)',
+                flexShrink: 0
+              }}
+            />
+          ) : (
+            <UserCircle size={32} style={{ color: 'var(--accent-primary)', flexShrink: 0 }} />
+          )}
         </button>
       </header>
 
@@ -221,9 +237,11 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                   <div className="position-relative">
                     {/* Header with icon */}
                     <div className="d-flex align-items-center gap-2 mb-1">
-                      <div className="d-flex align-items-center justify-content-center rounded-2" style={{ width: '28px', height: '28px', background: 'linear-gradient(135deg, #00b4d8 0%, #0096b4 100%)' }}>
-                        <Zap size={14} style={{ color: '#fff' }} />
-                      </div>
+                      <svg viewBox="0 0 100 100" style={{ width: '24px', height: '24px' }} fill="none" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="50" cy="50" r="46" stroke="#000" strokeWidth="4" />
+                        <path d="M 32 32 L 32 68" stroke="#00b4d8" strokeWidth="18" />
+                        <path d="M 32 32 L 68 68 L 68 32" stroke="#121a2f" strokeWidth="18" />
+                      </svg>
                       <h5 className="fw-bold mb-0" style={{ color: 'var(--text-primary)' }}>Interview Setup</h5>
                     </div>
                     <p className="small mb-3" style={{ color: 'var(--text-secondary)', paddingLeft: '36px' }}>Configure your session and get started.</p>
@@ -273,7 +291,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                         RESUME UPLOAD
                       </label>
                       <div className="rounded-3 text-center transition-all config-dropzone" style={{ border: `2px dashed ${file ? '#10b981' : 'rgba(0,0,0,0.12)'}`, backgroundColor: file ? 'rgba(16,185,129,0.04)' : 'rgba(0,0,0,0.02)', padding: '0.75rem', transition: 'all 0.3s ease' }}>
-                        <input type="file" id="up" hidden onChange={(e) => setFile(e.target.files[0])} />
+                        <input type="file" id="up" hidden accept=".pdf" onChange={(e) => setFile(e.target.files[0])} />
                         <label htmlFor="up" className="mb-0 w-100 cursor-pointer d-flex align-items-center justify-content-center gap-2" style={{ fontSize: '0.85rem' }}>
                           {file ? (
                             <>

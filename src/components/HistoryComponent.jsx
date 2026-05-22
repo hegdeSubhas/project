@@ -30,7 +30,7 @@ const HistoryComponent = ({ report, onBack }) => {
             </div>
           </div>
         </div>
-        <button className="btn rounded-pill px-3 py-2 d-flex align-items-center gap-2 fw-bold border-0" style={{ background: '#121a2f', color: '#fff', fontSize: '0.8rem' }}>
+        <button onClick={() => window.print()} className="btn rounded-pill px-3 py-2 d-flex align-items-center gap-2 fw-bold border-0" style={{ background: '#121a2f', color: '#fff', fontSize: '0.8rem' }}>
           <Download size={15} /> Export PDF
         </button>
       </header>

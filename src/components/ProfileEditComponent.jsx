@@ -199,11 +199,7 @@ const ProfileEditComponent = ({ profile, setProfile, onSave, onBack }) => {
                 {avatarError && (
                   <div style={{ color: '#dc2626', fontSize: '0.8rem' }}>⚠️ {avatarError}</div>
                 )}
-                {!avatarUploading && !avatarError && (
-                  <div style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>
-                    Click the <span style={{ color: '#00b4d8' }}>📷</span> to upload a profile photo (max 5 MB)
-                  </div>
-                )}
+
               </div>
             </div>
 
@@ -273,11 +269,8 @@ const ProfileEditComponent = ({ profile, setProfile, onSave, onBack }) => {
 
                 {/* Email — READ ONLY */}
                 <div className="col-12">
-                  <label className="fw-bold small mb-2 text-uppercase d-flex align-items-center gap-2" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px', fontSize: '0.7rem' }}>
+                  <label className="fw-bold small mb-2 text-uppercase" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px', fontSize: '0.7rem' }}>
                     Email Address
-                    <span className="rounded-pill px-2" style={{ background: 'rgba(0,180,216,0.1)', color: '#00b4d8', fontSize: '0.65rem', fontWeight: 700 }}>
-                      ACCOUNT ID · READ ONLY
-                    </span>
                   </label>
                   <div className="position-relative">
                     <Mail size={16} className="position-absolute" style={{ top: '50%', left: '1rem', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
@@ -291,9 +284,7 @@ const ProfileEditComponent = ({ profile, setProfile, onSave, onBack }) => {
                       readOnly
                     />
                   </div>
-                  <div className="mt-1" style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                    Your email is your account identifier and cannot be changed.
-                  </div>
+
                 </div>
 
                 {/* Target Role */}

@@ -3,10 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import {
   User, Video, Mic, PlayCircle, Clock,
   Upload, UserCircle, ChevronRight, Terminal, CheckCircle2, AlertCircle,
-  FileText, Zap, ArrowRight
+  FileText, Zap, ArrowRight, Loader2
 } from 'lucide-react';
 import InterviewSessionComponent from './InterviewSessionComponent';
 import SystemCheckComponent from './SystemCheckComponent';
+
+const API_BASE = 'http://localhost:5000/api';
 
 const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
   const navigate = useNavigate();
@@ -20,17 +22,68 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
   const [showSystemCheck, setShowSystemCheck] = useState(false);
   const [showAnalysis, setShowAnalysis] = useState(false);
 
+  // Resume analysis / session plan state
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState('');
+  const [sessionPlan, setSessionPlan] = useState(null);
+
   // Function to handle history item click
   const handleHistoryNavigation = (item) => {
     onHistoryClick(item); // Update the selected report in App.js state
     navigate('/history'); // Redirect to the history route
   };
 
-  // Function to start the interview session
-  const handleStartSession = () => {
-    if (mic && cam && role && file) {
-      setShowSystemCheck(true);
-    }
+  // Function to start the interview session — dev mode: skip everything
+  const handleStartSession = async () => {
+    // DEV MODE: skip all validation and API calls, go straight to session
+    const defaultPlan = {
+      sessionId: 'dev-session-' + Date.now(),
+      candidateName: profile?.name || profile?.firstName || 'Candidate',
+      detectedRole: role || 'Python',
+      experienceLevel: 'mid',
+      experienceYears: 0,
+      detectedSkills: [],
+      skillsByCategory: {},
+      topSkills: [],
+      education: [],
+      certifications: [],
+      alternativeRoles: [],
+      totalQuestions: 7,
+      maxDurationMinutes: 15,
+      closingMessage: "Those were really thoughtful responses. That covers everything I had for today — thank you so much for your time, it's been a pleasure chatting with you!",
+      interviewPlan: [
+        {
+          phase: 'icebreaker',
+          phaseLabel: '👋 Warm Up',
+          transitionMessage: null,
+          questions: [
+            { id: 'ib_1', question: "Tell me a bit about yourself — your background, what got you into tech, and what you've been working on lately.", avatarIntro: "Hey! Really glad you could make it today. Let's keep things relaxed to start — ", type: 'conversational', phase: 'icebreaker' },
+            { id: 'ib_2', question: "What's a project or piece of work you're genuinely proud of, and why does it stand out to you?", avatarIntro: "Awesome, love that background! Now, I'm curious — ", type: 'conversational', phase: 'icebreaker' },
+          ],
+        },
+        {
+          phase: 'skill_spotlight',
+          phaseLabel: '🎯 Skill Spotlight',
+          transitionMessage: "That's great, thanks for sharing! Now I'd love to dig into some of the specific skills and experience you mentioned in your background.",
+          questions: [
+            { id: 'ss_1', question: "Can you explain the difference between a list and a tuple in Python?", expected_answer: "Lists are mutable, tuples are immutable.", difficulty: 'easy', topic: 'Python Basics', avatarIntro: "Let's talk about your experience with this — ", type: 'technical', phase: 'skill_spotlight' },
+            { id: 'ss_2', question: "What are decorators in Python and how do you use them?", expected_answer: "Decorators are functions that modify the behavior of other functions.", difficulty: 'medium', topic: 'Python', avatarIntro: "I noticed this on your resume, so tell me — ", type: 'technical', phase: 'skill_spotlight' },
+          ],
+        },
+        {
+          phase: 'deep_dive',
+          phaseLabel: '🔥 Technical Deep Dive',
+          transitionMessage: "Excellent answers so far! Let's move into some more technical territory — I want to see how you approach real-world problems.",
+          questions: [
+            { id: 'dd_1', question: "Explain how garbage collection works in Python.", expected_answer: "Python uses reference counting and a cyclic garbage collector.", difficulty: 'hard', topic: 'Python Internals', avatarIntro: "Alright, let's go deeper — ", type: 'technical', phase: 'deep_dive' },
+            { id: 'dd_2', question: "What is the GIL in Python and how does it affect multithreading?", expected_answer: "The Global Interpreter Lock prevents multiple threads from executing Python bytecode simultaneously.", difficulty: 'hard', topic: 'Python Internals', avatarIntro: "Here's a more technical one — ", type: 'technical', phase: 'deep_dive' },
+            { id: 'dd_3', question: "How would you optimize a slow database query in a web application?", expected_answer: "Use indexing, query optimization, caching, and connection pooling.", difficulty: 'medium', topic: 'Backend', avatarIntro: "Think through this one carefully — ", type: 'technical', phase: 'deep_dive' },
+          ],
+        },
+      ],
+    };
+    setSessionPlan(defaultPlan);
+    setIsSessionActive(true);
   };
 
   // Function to end the interview session
@@ -46,7 +99,18 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
 
   // If interview session is active, render the interview component
   if (isSessionActive && !showAnalysis) {
-    return <InterviewSessionComponent onEndSession={handleEndSession} role={role} candidate={profile?.name} />;
+    return (
+      <InterviewSessionComponent
+        onEndSession={handleEndSession}
+        role={role}
+        candidate={profile?.name || profile?.firstName || 'You'}
+        interviewPlan={sessionPlan?.interviewPlan || []}
+        detectedSkills={sessionPlan?.detectedSkills || []}
+        experienceLevel={sessionPlan?.experienceLevel || 'mid'}
+        closingMessage={sessionPlan?.closingMessage}
+        sessionId={sessionPlan?.sessionId}
+      />
+    );
   }
 
   // If analysis is active, render the analysis popup
@@ -288,7 +352,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                     <div className="mb-2 config-field">
                       <label className="fw-bold small mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
                         <span className="d-inline-flex align-items-center justify-content-center rounded-circle" style={{ width: '18px', height: '18px', fontSize: '0.6rem', fontWeight: 700, background: file ? '#10b981' : 'rgba(0,180,216,0.15)', color: file ? '#fff' : '#00b4d8', transition: 'all 0.3s ease' }}>{file ? '✓' : '2'}</span>
-                        RESUME UPLOAD
+                        RESUME UPLOAD <span style={{ fontSize: '0.6rem', fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
                       </label>
                       <div className="rounded-3 text-center transition-all config-dropzone" style={{ border: `2px dashed ${file ? '#10b981' : 'rgba(0,0,0,0.12)'}`, backgroundColor: file ? 'rgba(16,185,129,0.04)' : 'rgba(0,0,0,0.02)', padding: '0.75rem', transition: 'all 0.3s ease' }}>
                         <input type="file" id="up" hidden accept=".pdf" onChange={(e) => setFile(e.target.files[0])} />
@@ -314,21 +378,31 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                     {/* Readiness bar */}
                     <div className="d-flex align-items-center gap-2 mb-3">
                       <div className="d-flex gap-1 flex-grow-1">
-                        {[mic, cam, !!role, !!file].map((ready, i) => (
+                        {[mic, cam, !!role].map((ready, i) => (
                           <div key={i} className="flex-grow-1 rounded-pill" style={{ height: '3px', backgroundColor: ready ? '#00b4d8' : 'rgba(0,0,0,0.08)', transition: 'background-color 0.4s ease' }}></div>
                         ))}
                       </div>
                       <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
-                        {[mic, cam, !!role, !!file].filter(Boolean).length}/4
+                        {[mic, cam, !!role].filter(Boolean).length}/3
                       </span>
                     </div>
+                    {analyzeError && (
+                      <div className="mb-2 px-3 py-2 rounded-3 d-flex align-items-center gap-2"
+                        style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', fontSize: '0.78rem', color: '#dc2626' }}>
+                        <AlertCircle size={14} />
+                        {analyzeError}
+                      </div>
+                    )}
                     <button
                       onClick={handleStartSession}
-                      className={`launch-btn py-2 d-flex align-items-center justify-content-center gap-2 w-100 rounded-3 border-0 fw-bold ${(mic && cam && role && file) ? 'launch-btn-ready' : 'launch-btn-disabled'}`}
-                      disabled={!(mic && cam && role && file)}
+                      className={`launch-btn py-2 d-flex align-items-center justify-content-center gap-2 w-100 rounded-3 border-0 fw-bold launch-btn-ready`}
+
                     >
-                      <PlayCircle size={18} /> Launch Session
-                      {(mic && cam && role && file) && <ArrowRight size={16} className="launch-arrow" />}
+                      {isAnalyzing ? (
+                        <><Loader2 size={18} className="spin-icon" /> {file ? 'Analyzing Resume…' : 'Preparing Session…'}</>
+                      ) : (
+                        <><PlayCircle size={18} /> Launch Session {(mic && cam && role) && <ArrowRight size={16} className="launch-arrow" />}</>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -510,6 +584,14 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
         .link-hover:hover {
           transform: translateX(3px);
           color: var(--accent-primary-hover) !important;
+        }
+
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        .spin-icon {
+          animation: spin 0.8s linear infinite;
         }
 
         .sidebar-panel {

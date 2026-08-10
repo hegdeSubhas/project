@@ -33,9 +33,23 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
     navigate('/history'); // Redirect to the history route
   };
 
-  // Function to start the interview session — dev mode: skip everything
+  const isReady = mic && cam && !!role && !!file;
+
+  // Function to start the interview session
   const handleStartSession = async () => {
-    // DEV MODE: skip all validation and API calls, go straight to session
+    if (!role) {
+      setAnalyzeError('Please select a target domain.');
+      return;
+    }
+    if (!file) {
+      setAnalyzeError('Please upload your resume (PDF) to proceed.');
+      return;
+    }
+    if (!mic || !cam) {
+      setAnalyzeError('Please turn on mic and camera permissions.');
+      return;
+    }
+    setAnalyzeError('');
     const defaultPlan = {
       sessionId: 'dev-session-' + Date.now(),
       candidateName: profile?.name || profile?.firstName || 'Candidate',
@@ -83,7 +97,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
       ],
     };
     setSessionPlan(defaultPlan);
-    setIsSessionActive(true);
+    setShowSystemCheck(true);
   };
 
   // Function to end the interview session
@@ -92,9 +106,17 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
   };
 
   const handleCloseAnalysis = () => {
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
     setShowAnalysis(false);
     setIsSessionActive(false);
     setShowSystemCheck(false);
+    setSessionPlan(null);
+    setRole("");
+    setFile(null);
+    setMic(false);
+    setCam(false);
   };
 
   // If interview session is active, render the interview component
@@ -109,6 +131,8 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
         experienceLevel={sessionPlan?.experienceLevel || 'mid'}
         closingMessage={sessionPlan?.closingMessage}
         sessionId={sessionPlan?.sessionId}
+        agentId="v2_agt_uUIJjjWL"
+        clientKey="ck_9TKy6r9Kv3zii59c-sN1n"
       />
     );
   }
@@ -250,7 +274,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
 
                   {/* Section title */}
                   <div className="text-center mb-3 position-relative">
-                    <span className="text-uppercase fw-bold" style={{ fontSize: '0.65rem', letterSpacing: '2.5px', color: '#00b4d8' }}>System Check</span>
+                    <span className="text-uppercase fw-bold" style={{ fontSize: '0.65rem', letterSpacing: '2.5px', color: '#00b4d8' }}>Permission Check</span>
                   </div>
 
                   {/* Camera preview */}
@@ -352,10 +376,10 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                     <div className="mb-2 config-field">
                       <label className="fw-bold small mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
                         <span className="d-inline-flex align-items-center justify-content-center rounded-circle" style={{ width: '18px', height: '18px', fontSize: '0.6rem', fontWeight: 700, background: file ? '#10b981' : 'rgba(0,180,216,0.15)', color: file ? '#fff' : '#00b4d8', transition: 'all 0.3s ease' }}>{file ? '✓' : '2'}</span>
-                        RESUME UPLOAD <span style={{ fontSize: '0.6rem', fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span>
+                        RESUME UPLOAD <span style={{ fontSize: '0.6rem', fontWeight: 600, color: '#ef4444' }}>(required)</span>
                       </label>
-                      <div className="rounded-3 text-center transition-all config-dropzone" style={{ border: `2px dashed ${file ? '#10b981' : 'rgba(0,0,0,0.12)'}`, backgroundColor: file ? 'rgba(16,185,129,0.04)' : 'rgba(0,0,0,0.02)', padding: '0.75rem', transition: 'all 0.3s ease' }}>
-                        <input type="file" id="up" hidden accept=".pdf" onChange={(e) => setFile(e.target.files[0])} />
+                      <div className="rounded-3 text-center transition-all config-dropzone" style={{ border: `2px dashed ${file ? '#10b981' : 'rgba(239,68,68,0.3)'}`, backgroundColor: file ? 'rgba(16,185,129,0.04)' : 'rgba(0,0,0,0.02)', padding: '0.75rem', transition: 'all 0.3s ease' }}>
+                        <input type="file" id="up" hidden accept=".pdf" onChange={(e) => { setFile(e.target.files[0]); setAnalyzeError(''); }} />
                         <label htmlFor="up" className="mb-0 w-100 cursor-pointer d-flex align-items-center justify-content-center gap-2" style={{ fontSize: '0.85rem' }}>
                           {file ? (
                             <>
@@ -365,7 +389,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                           ) : (
                             <>
                               <Upload size={18} style={{ color: '#00b4d8' }} />
-                              <span style={{ color: 'var(--text-secondary)' }}>Click to upload resume (PDF)</span>
+                              <span style={{ color: 'var(--text-secondary)' }}>Click to upload resume (PDF) — Required</span>
                             </>
                           )}
                         </label>
@@ -378,12 +402,12 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                     {/* Readiness bar */}
                     <div className="d-flex align-items-center gap-2 mb-3">
                       <div className="d-flex gap-1 flex-grow-1">
-                        {[mic, cam, !!role].map((ready, i) => (
+                        {[mic, cam, !!role, !!file].map((ready, i) => (
                           <div key={i} className="flex-grow-1 rounded-pill" style={{ height: '3px', backgroundColor: ready ? '#00b4d8' : 'rgba(0,0,0,0.08)', transition: 'background-color 0.4s ease' }}></div>
                         ))}
                       </div>
                       <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
-                        {[mic, cam, !!role].filter(Boolean).length}/3
+                        {[mic, cam, !!role, !!file].filter(Boolean).length}/4
                       </span>
                     </div>
                     {analyzeError && (
@@ -395,13 +419,14 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                     )}
                     <button
                       onClick={handleStartSession}
-                      className={`launch-btn py-2 d-flex align-items-center justify-content-center gap-2 w-100 rounded-3 border-0 fw-bold launch-btn-ready`}
-
+                      className={`launch-btn py-2 d-flex align-items-center justify-content-center gap-2 w-100 rounded-3 border-0 fw-bold ${isReady ? 'launch-btn-ready' : 'launch-btn-disabled'}`}
                     >
                       {isAnalyzing ? (
-                        <><Loader2 size={18} className="spin-icon" /> {file ? 'Analyzing Resume…' : 'Preparing Session…'}</>
+                        <><Loader2 size={18} className="spin-icon" /> Analyzing Resume…</>
                       ) : (
-                        <><PlayCircle size={18} /> Launch Session {(mic && cam && role) && <ArrowRight size={16} className="launch-arrow" />}</>
+                        <>
+                          <PlayCircle size={18} /> Launch Session {isReady && <ArrowRight size={16} className="launch-arrow" />}
+                        </>
                       )}
                     </button>
                   </div>

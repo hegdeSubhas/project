@@ -20,7 +20,7 @@ const SystemCheckComponent = ({ onChecksPassed, onBack }) => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [countdown, setCountdown] = useState(5);
 
-  const NOISE_THRESHOLD = 135;
+  const NOISE_THRESHOLD = 35;
   const MIN_BRIGHTNESS = 40;
   const MIN_WIDTH = 640;
   const MIN_HEIGHT = 480;

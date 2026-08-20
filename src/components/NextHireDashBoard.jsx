@@ -17,6 +17,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
   const [mic, setMic] = useState(false);
   const [cam, setCam] = useState(false);
   const [role, setRole] = useState("");
+  const [experienceLevel, setExperienceLevel] = useState("");
   const [file, setFile] = useState(null);
   const [isSessionActive, setIsSessionActive] = useState(false);
   const [showSystemCheck, setShowSystemCheck] = useState(false);
@@ -26,6 +27,8 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState('');
   const [sessionPlan, setSessionPlan] = useState(null);
+  // New state to hold extracted resume data
+  const [resumeData, setResumeData] = useState(null);
 
   // Function to handle history item click
   const handleHistoryNavigation = (item) => {
@@ -33,12 +36,61 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
     navigate('/history'); // Redirect to the history route
   };
 
-  const isReady = mic && cam && !!role && !!file;
+  const isReady = mic && cam && !!role && !!experienceLevel && !!file;
+
+  // Helper to send resume to backend and retrieve extracted information
+  const analyzeResume = async () => {
+    if (!file) {
+      setAnalyzeError('No resume file selected.');
+      return false;
+    }
+    setIsAnalyzing(true);
+    setAnalyzeError('');
+    try {
+      const form = new FormData();
+      form.append('resume', file);
+      if (role) form.append('role', role);
+      if (experienceLevel) form.append('experienceLevel', experienceLevel);
+      const res = await fetch(`${API_BASE}/resume/analyze`, {
+        method: 'POST',
+        body: form,
+      });
+      if (!res.ok) {
+        // If 404, fallback to dummy data
+        if (res.status === 404) {
+          const dummy = {
+            primaryLanguage: 'JavaScript',
+            targetRole: role || 'Software Engineer',
+            experienceLevel: experienceLevel ? experienceLevel.toLowerCase() : 'beginner',
+            experienceYears: 0,
+            skills: { primary: ['JavaScript', 'React', 'Node.js'], secondary: [] },
+            projects: [],
+          };
+          setResumeData(dummy);
+          return true;
+        }
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || `Server responded with ${res.status}`);
+      }
+      const data = await res.json();
+      setResumeData(data);
+      return true;
+    } catch (e) {
+      setAnalyzeError(e.message);
+      return false;
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   // Function to start the interview session
   const handleStartSession = async () => {
     if (!role) {
       setAnalyzeError('Please select a target domain.');
+      return;
+    }
+    if (!experienceLevel) {
+      setAnalyzeError('Please select your experience level (Beginner, Intermediate, or Advanced).');
       return;
     }
     if (!file) {
@@ -49,13 +101,17 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
       setAnalyzeError('Please turn on mic and camera permissions.');
       return;
     }
+    // First, analyze the resume
+    const success = await analyzeResume();
+    if (!success) return;
+
     setAnalyzeError('');
     const defaultPlan = {
       sessionId: 'dev-session-' + Date.now(),
       candidateName: profile?.name || profile?.firstName || 'Candidate',
       detectedRole: role || 'Python',
-      experienceLevel: 'mid',
-      experienceYears: 0,
+      experienceLevel: experienceLevel ? experienceLevel.toLowerCase() : 'mid',
+      experienceYears: experienceLevel === 'Beginner' ? 1 : experienceLevel === 'Intermediate' ? 3 : 6,
       detectedSkills: [],
       skillsByCategory: {},
       topSkills: [],
@@ -72,7 +128,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
           transitionMessage: null,
           questions: [
             { id: 'ib_1', question: "Tell me a bit about yourself — your background, what got you into tech, and what you've been working on lately.", avatarIntro: "Hey! Really glad you could make it today. Let's keep things relaxed to start — ", type: 'conversational', phase: 'icebreaker' },
-            { id: 'ib_2', question: "What's a project or piece of work you're genuinely proud of, and why does it stand out to you?", avatarIntro: "Awesome, love that background! Now, I'm curious — ", type: 'conversational', phase: 'icebreaker' },
+            { id: 'ib_2', question: "What's a project or piece of work you're genuinely proud of, and why does it stand out?", avatarIntro: "Awesome, love that background! Now I'm curious — ", type: 'conversational', phase: 'icebreaker' },
           ],
         },
         {
@@ -114,6 +170,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
     setShowSystemCheck(false);
     setSessionPlan(null);
     setRole("");
+    setExperienceLevel("");
     setFile(null);
     setMic(false);
     setCam(false);
@@ -128,7 +185,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
         candidate={profile?.name || profile?.firstName || 'You'}
         interviewPlan={sessionPlan?.interviewPlan || []}
         detectedSkills={sessionPlan?.detectedSkills || []}
-        experienceLevel={sessionPlan?.experienceLevel || 'mid'}
+        experienceLevel={sessionPlan?.experienceLevel || (experienceLevel ? experienceLevel.toLowerCase() : 'mid')}
         closingMessage={sessionPlan?.closingMessage}
         sessionId={sessionPlan?.sessionId}
         agentId="v2_agt_uUIJjjWL"
@@ -143,7 +200,7 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
       <div className="vh-100 w-100 d-flex flex-column align-items-center justify-content-center p-3 animate-fade-in" style={{ background: 'var(--bg-app)', position: 'absolute', top: 0, left: 0, zIndex: 1050, overflow: 'hidden' }}>
         {/* Subtle background glow */}
         <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(0,180,216,0.1) 0%, transparent 70%)', pointerEvents: 'none' }}></div>
-        
+
         <div className="dash-card rounded-4 p-4 d-flex flex-column shadow-lg position-relative" style={{ maxWidth: '750px', width: '100%', maxHeight: '90vh', background: 'var(--bg-panel)', border: '1px solid rgba(0, 180, 216, 0.2)', backdropFilter: 'blur(16px)' }}>
           {/* Header */}
           <div className="text-center mb-4">
@@ -259,12 +316,12 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
       </header>
 
       {/* 2. MAIN WORKSPACE */}
-      <main className="p-3 p-lg-4 flex-grow-1 position-relative z-index-0 d-flex flex-column" style={{ overflow: 'hidden' }}>
+      <main className="p-3 p-lg-4 flex-grow-1 position-relative z-index-0 d-flex flex-column" style={{ overflow: 'auto' }}>
         <div className="d-flex flex-column flex-xl-row gap-3 gap-lg-4 flex-grow-1 w-100" style={{ minHeight: 0 }}>
 
           {/* LEFT: INTERVIEW LOBBY */}
           <div className="flex-grow-1 d-flex flex-column" style={{ minWidth: 0, minHeight: 0 }}>
-            <div className="dash-card flex-grow-1 border-0 rounded-4 overflow-hidden position-relative animate-fade-in animate-delay-1 d-flex flex-column" style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4)', minHeight: 0 }}>
+            <div className="dash-card flex-grow-1 border-0 rounded-4 overflow-hidden position-relative animate-fade-in animate-delay-1 d-flex flex-column" style={{ boxShadow: '0 8px 32px rgba(0,0,0,0.4)', minHeight: 0, overflowY: 'auto' }}>
               <div className="d-flex flex-column flex-md-row flex-grow-1" style={{ minHeight: 0 }}>
 
                 {/* Media Setup Sidebar */}
@@ -342,8 +399,8 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                       </label>
                       <div className="d-flex gap-3">
                         {[
-                          { value: 'Python', label: 'Python Stack', desc: 'Basic Pyhton,Flask,Django', icon: '🐍', bg: 'rgba(59,130,246,0.08)' },
-                          { value: 'Java', label: 'Java Stack', desc: 'Core Java,Collection', icon: '☕', bg: 'rgba(249,115,22,0.08)' },
+                          { value: 'Python', label: 'Python Stack', desc: 'Basic Python, Flask, Django', icon: '🐍', bg: 'rgba(59,130,246,0.08)' },
+                          { value: 'Java', label: 'Java Stack', desc: 'Core Java, Collections, Spring', icon: '☕', bg: 'rgba(249,115,22,0.08)' },
                         ].map((opt) => (
                           <button
                             key={opt.value}
@@ -372,10 +429,52 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                       </div>
                     </div>
 
-                    {/* Step 2: Resume Upload */}
+                    {/* Step 2: Experience Level in selected tech stack */}
+                    <div className="mb-3 config-field">
+                      <label className="fw-bold small mb-2 d-flex align-items-center gap-2" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
+                        <span className="d-inline-flex align-items-center justify-content-center rounded-circle" style={{ width: '18px', height: '18px', fontSize: '0.6rem', fontWeight: 700, background: experienceLevel ? '#10b981' : 'rgba(0,180,216,0.15)', color: experienceLevel ? '#fff' : '#00b4d8', transition: 'all 0.3s ease' }}>{experienceLevel ? '✓' : '2'}</span>
+                        EXPERIENCE LEVEL {role ? `(${role.toUpperCase()})` : ''} <span style={{ fontSize: '0.6rem', fontWeight: 600, color: '#ef4444' }}>(required)</span>
+                      </label>
+                      <div className="d-flex gap-2">
+                        {[
+                          { value: 'Beginner', label: 'Beginner', subtitle: '0–2 yrs', desc: 'Foundations & Syntax', icon: '🌱', bg: 'rgba(16,185,129,0.08)' },
+                          { value: 'Intermediate', label: 'Intermediate', subtitle: '2–5 yrs', desc: 'Core Concepts & OOP', icon: '⚡', bg: 'rgba(59,130,246,0.08)' },
+                          { value: 'Advanced', label: 'Advanced', subtitle: '5+ yrs', desc: 'Architecture & Scaling', icon: '🚀', bg: 'rgba(139,92,246,0.08)' },
+                        ].map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setExperienceLevel(opt.value)}
+                            className={`domain-option flex-grow-1 rounded-3 p-2 p-sm-3 text-start ${experienceLevel === opt.value ? 'domain-active' : ''}`}
+                            style={{
+                              background: experienceLevel === opt.value ? 'rgba(0,180,216,0.06)' : '#fff',
+                              border: experienceLevel === opt.value ? '2px solid #00b4d8' : '2px solid rgba(0,0,0,0.08)',
+                              cursor: 'pointer',
+                              transition: 'all 0.25s ease',
+                              boxShadow: experienceLevel === opt.value ? '0 4px 12px rgba(0,180,216,0.12)' : '0 2px 8px rgba(0,0,0,0.04)',
+                            }}
+                          >
+                            <div className="d-flex align-items-center gap-2">
+                              <div className="d-flex align-items-center justify-content-center rounded-3" style={{ width: '36px', height: '36px', background: experienceLevel === opt.value ? 'rgba(0,180,216,0.12)' : opt.bg, flexShrink: 0 }}>
+                                <span style={{ fontSize: '1.1rem' }}>{opt.icon}</span>
+                              </div>
+                              <div style={{ minWidth: 0 }}>
+                                <div className="d-flex align-items-center gap-1 flex-wrap">
+                                  <span className="fw-bold" style={{ fontSize: '0.82rem', color: experienceLevel === opt.value ? '#00b4d8' : 'var(--text-primary)' }}>{opt.label}</span>
+                                  <span className="badge rounded-pill" style={{ fontSize: '0.58rem', backgroundColor: experienceLevel === opt.value ? 'rgba(0,180,216,0.15)' : 'rgba(0,0,0,0.05)', color: experienceLevel === opt.value ? '#007799' : 'var(--text-muted)', fontWeight: 600 }}>{opt.subtitle}</span>
+                                </div>
+                                <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', lineHeight: 1.2, marginTop: '2px' }}>{opt.desc}</div>
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Step 3: Resume Upload */}
                     <div className="mb-2 config-field">
                       <label className="fw-bold small mb-1 d-flex align-items-center gap-2" style={{ color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
-                        <span className="d-inline-flex align-items-center justify-content-center rounded-circle" style={{ width: '18px', height: '18px', fontSize: '0.6rem', fontWeight: 700, background: file ? '#10b981' : 'rgba(0,180,216,0.15)', color: file ? '#fff' : '#00b4d8', transition: 'all 0.3s ease' }}>{file ? '✓' : '2'}</span>
+                        <span className="d-inline-flex align-items-center justify-content-center rounded-circle" style={{ width: '18px', height: '18px', fontSize: '0.6rem', fontWeight: 700, background: file ? '#10b981' : 'rgba(0,180,216,0.15)', color: file ? '#fff' : '#00b4d8', transition: 'all 0.3s ease' }}>{file ? '✓' : '3'}</span>
                         RESUME UPLOAD <span style={{ fontSize: '0.6rem', fontWeight: 600, color: '#ef4444' }}>(required)</span>
                       </label>
                       <div className="rounded-3 text-center transition-all config-dropzone" style={{ border: `2px dashed ${file ? '#10b981' : 'rgba(239,68,68,0.3)'}`, backgroundColor: file ? 'rgba(16,185,129,0.04)' : 'rgba(0,0,0,0.02)', padding: '0.75rem', transition: 'all 0.3s ease' }}>
@@ -394,6 +493,23 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                           )}
                         </label>
                       </div>
+                      {/* Analysis Button */}
+                      <button
+                        onClick={analyzeResume}
+                        disabled={!file || isAnalyzing}
+                        className="btn btn-sm w-100 mt-2 rounded-3 border-0 py-2 d-flex align-items-center justify-content-center gap-2"
+                        style={{ backgroundColor: 'rgba(0,180,216,0.1)', color: '#00b4d8', fontWeight: 600 }}
+                      >
+                        {isAnalyzing ? <Loader2 size={16} className="spin-icon" /> : <Terminal size={16} />}
+                        {isAnalyzing ? 'Analyzing...' : 'Analyze Resume'}
+                      </button>
+                      {/* Extracted Resume Info */}
+                      {resumeData && (
+                        <div className="mt-3 p-3 rounded-4 custom-scrollbar" style={{ background: 'rgba(0,180,216,0.05)', border: '1px solid rgba(0,180,216,0.2)', maxHeight: '300px', overflowY: 'auto' }}>
+                          <h6 className="fw-bold mb-2" style={{ color: 'var(--text-primary)' }}>Extracted Resume Information</h6>
+                          <pre style={{ whiteSpace: 'pre-wrap', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>{JSON.stringify(resumeData, null, 2)}</pre>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -402,12 +518,12 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                     {/* Readiness bar */}
                     <div className="d-flex align-items-center gap-2 mb-3">
                       <div className="d-flex gap-1 flex-grow-1">
-                        {[mic, cam, !!role, !!file].map((ready, i) => (
+                        {[mic, cam, !!role, !!experienceLevel, !!file].map((ready, i) => (
                           <div key={i} className="flex-grow-1 rounded-pill" style={{ height: '3px', backgroundColor: ready ? '#00b4d8' : 'rgba(0,0,0,0.08)', transition: 'background-color 0.4s ease' }}></div>
                         ))}
                       </div>
                       <span style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', letterSpacing: '0.5px' }}>
-                        {[mic, cam, !!role, !!file].filter(Boolean).length}/4
+                        {[mic, cam, !!role, !!experienceLevel, !!file].filter(Boolean).length}/5
                       </span>
                     </div>
                     {analyzeError && (
@@ -419,7 +535,8 @@ const NextHireDashBoard = ({ profile, history = [], onHistoryClick }) => {
                     )}
                     <button
                       onClick={handleStartSession}
-                      className={`launch-btn py-2 d-flex align-items-center justify-content-center gap-2 w-100 rounded-3 border-0 fw-bold ${isReady ? 'launch-btn-ready' : 'launch-btn-disabled'}`}
+                      disabled={!isReady || isAnalyzing}
+                      className={`launch-btn py-2 d-flex align-items-center justify-content-center gap-2 w-100 rounded-3 border-0 fw-bold ${isReady && !isAnalyzing ? 'launch-btn-ready' : 'launch-btn-disabled'}`}
                     >
                       {isAnalyzing ? (
                         <><Loader2 size={18} className="spin-icon" /> Analyzing Resume…</>

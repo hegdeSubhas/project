@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import {
   Phone, Mic, MicOff, Video, VideoOff,
   Volume2, VolumeX, Clock, SkipForward,
@@ -137,6 +137,9 @@ export default function InterviewSessionComponent({
   const transcriptEnd = useRef(null);     // scroll anchor
   const mutedRef = useRef(false);    // always-current muted flag
   const stateRef = useRef({});       // snapshot of key state for callbacks
+  const slotMainRef = useRef(null);      // container slot in main left interviewer card
+  const slotSmallRef = useRef(null);     // container slot in small right interviewer card when sharing
+  const agentContainerRef = useRef(null);// reference to #did-agent-container
 
   // ── Media ──────────────────────────────────────────────────────────────────
   const [camOn, setCamOn] = useState(true);
@@ -218,6 +221,15 @@ export default function InterviewSessionComponent({
       videoRef.current.srcObject = webcamStreamRef.current;
     }
   }, [isSharing]); // fires after React mounts the PiP in its new position
+
+  // ── Dynamic Reparenting of D-ID Interviewer Container on Screen Share ────
+  useLayoutEffect(() => {
+    const agentEl = agentContainerRef.current || document.getElementById('did-agent-container');
+    const targetSlot = isSharing ? slotSmallRef.current : slotMainRef.current;
+    if (agentEl && targetSlot && agentEl.parentElement !== targetSlot) {
+      targetSlot.appendChild(agentEl);
+    }
+  }, [isSharing]);
 
 
   // ── Session timer ──────────────────────────────────────────────────────────
@@ -723,22 +735,26 @@ export default function InterviewSessionComponent({
             minHeight: 0,
             display: isSharing ? 'none' : undefined,
           }}>
-            {/* D-ID Interactive AI Agent Container */}
-            <div
-              id="did-agent-container"
-              style={{
-                position: 'absolute',
-                inset: 0,
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                overflow: 'hidden',
-                borderRadius: 16,
-                zIndex: 2,
-              }}
-            />
+            {/* Target slot for D-ID Agent */}
+            <div ref={slotMainRef} style={{ position: 'absolute', inset: 0, zIndex: 2, overflow: 'hidden', borderRadius: 16 }}>
+              {/* D-ID Interactive AI Agent Container */}
+              <div
+                id="did-agent-container"
+                ref={agentContainerRef}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  borderRadius: 16,
+                  zIndex: 2,
+                }}
+              />
+            </div>
 
             {/* Avatar illustration (Fallback) */}
             <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, zIndex: 1 }}>
@@ -792,17 +808,17 @@ export default function InterviewSessionComponent({
 
 
             {isSpeaking && (
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '6px 14px', background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)', fontSize: 12, color: '#7dd3fc', fontWeight: 600 }}>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '6px 14px', background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)', fontSize: 12, color: '#7dd3fc', fontWeight: 600, zIndex: 3 }}>
                 Speaking…
               </div>
             )}
             {isThinking && (
-              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '6px 14px', background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)', fontSize: 12, color: '#a78bfa', fontWeight: 600 }}>
+              <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '6px 14px', background: 'linear-gradient(to top, rgba(0,0,0,0.75), transparent)', fontSize: 12, color: '#a78bfa', fontWeight: 600, zIndex: 3 }}>
                 Thinking…
               </div>
             )}
             {done && (
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, zIndex: 4 }}>
                 <CheckCircle2 size={56} color="#10b981" />
                 <p style={{ color: '#fff', fontWeight: 700, fontSize: 18, margin: 0 }}>Interview Complete!</p>
                 <button onClick={handleExit} style={{ padding: '10px 24px', borderRadius: 12, border: 'none', background: 'linear-gradient(135deg,#10b981,#059669)', color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
@@ -877,8 +893,11 @@ export default function InterviewSessionComponent({
                 transition: 'border-color 0.3s, box-shadow 0.3s',
                 height: 220, flexShrink: 0,
               }}>
-                {/* Fallback avatar (D-ID agent is in left panel, not moved) */}
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                {/* Target slot for D-ID Agent when sharing screen */}
+                <div ref={slotSmallRef} style={{ position: 'absolute', inset: 0, zIndex: 2, overflow: 'hidden', borderRadius: 14 }} />
+
+                {/* Fallback avatar (behind D-ID agent container) */}
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, zIndex: 1 }}>
                   <div style={{ position: 'relative' }}>
                     <div style={{
                       width: 72, height: 72, borderRadius: '50%',
@@ -918,12 +937,12 @@ export default function InterviewSessionComponent({
                 </div>
                 {/* Status label */}
                 {(isSpeaking || isThinking) && (
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '5px 12px', background: 'linear-gradient(to top,rgba(0,0,0,0.75),transparent)', fontSize: 11, color: isSpeaking ? '#7dd3fc' : '#a78bfa', fontWeight: 600 }}>
+                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '5px 12px', background: 'linear-gradient(to top,rgba(0,0,0,0.75),transparent)', fontSize: 11, color: isSpeaking ? '#7dd3fc' : '#a78bfa', fontWeight: 600, zIndex: 3 }}>
                     {isSpeaking ? 'Speaking…' : 'Thinking…'}
                   </div>
                 )}
                 {done && (
-                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                  <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.75)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, zIndex: 4 }}>
                     <CheckCircle2 size={36} color="#10b981" />
                     <p style={{ color: '#fff', fontWeight: 700, fontSize: 14, margin: 0 }}>Complete!</p>
                   </div>

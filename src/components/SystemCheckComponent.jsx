@@ -20,7 +20,7 @@ const SystemCheckComponent = ({ onChecksPassed, onBack }) => {
   const [errorMsg, setErrorMsg] = useState(null);
   const [countdown, setCountdown] = useState(5);
 
-  const NOISE_THRESHOLD = 35;
+  const NOISE_THRESHOLD = 55;
   const MIN_BRIGHTNESS = 40;
   const MIN_WIDTH = 640;
   const MIN_HEIGHT = 480;
@@ -209,8 +209,8 @@ const SystemCheckComponent = ({ onChecksPassed, onBack }) => {
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '3px' }}>
                 <span style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>0 dB</span>
-                <span style={{ fontSize: '0.55rem', color: '#f59e0b' }}>24 dB max</span>
-                <span style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>60 dB</span>
+                <span style={{ fontSize: '0.55rem', color: '#f59e0b' }}>55 dB max</span>
+                <span style={{ fontSize: '0.55rem', color: 'var(--text-muted)' }}>100 dB</span>
               </div>
             </div>
           )}
@@ -228,7 +228,7 @@ const SystemCheckComponent = ({ onChecksPassed, onBack }) => {
               <div>
                 <h5 style={{ color: 'var(--text-primary)', margin: '0 0 6px', fontWeight: 700, fontSize: '1.05rem' }}>Ready to Check?</h5>
                 <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '0.78rem', lineHeight: 1.5 }}>
-                  We'll test your microphone noise level (must be below 24 dB) and camera video quality.
+                  We'll test your microphone noise level (must be below 55 dB) and camera video quality.
                 </p>
               </div>
               <button onClick={startCheck} style={{ padding: '12px 28px', borderRadius: '10px', border: 'none', background: 'linear-gradient(135deg, #00b4d8, #0096b4)', color: '#fff', fontWeight: 700, fontSize: '0.88rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 18px rgba(0,180,216,0.35)', transition: 'all 0.3s ease' }}>
